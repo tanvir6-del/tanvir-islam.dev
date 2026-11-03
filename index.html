@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- MANDATORY Modern Web Guidance: Declare support for both light and dark themes -->
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        const storedScheme = localStorage.getItem('color-scheme');
+        const meta = document.querySelector('meta[name="color-scheme"]');
+        const activeScheme = storedScheme || 'dark';
+        if (meta) {
+          meta.content = storedScheme ? storedScheme : 'dark';
+        }
+        if (activeScheme === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        } else {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        }
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
+    <title>Tanvir-ul Islam | Principal SDET &amp; Quality Engineering Leader</title>
+    <meta
+      name="description"
+      content="Portfolio of Tanvir-ul Islam — Principal SDET and Quality Engineering Leader specializing in Agentic AI testing, Go microservices architecture, and enterprise quality governance across banking and fintech."
+    />
+    <meta property="og:title" content="Tanvir-ul Islam | Principal SDET & Quality Engineering Leader" />
+    <meta
+      property="og:description"
+      content="Over 15 years architecting enterprise-grade test automation frameworks, resilient cloud-native microservices testing, and next-generation agentic AI test workflows."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tanvir-islam.dev" />
+    <meta property="og:image" content="https://tanvir-islam.dev/assets/profile-headshot.jpg" />
+    <link rel="canonical" href="https://tanvir-islam.dev" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-[#070b14] dark:text-slate-100 antialiased selection:bg-sky-500/30 selection:text-sky-200 transition-colors duration-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

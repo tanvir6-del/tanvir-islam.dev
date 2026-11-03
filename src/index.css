@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Modern Web Guidance Best Practices Implementation
+   ========================================================================== */
+
+/* 1. Dark Mode & Color Scheme (Modern Web Guidance: dark-mode & dark-mode-toggle) */
+:root {
+  --color-brand-light: #0284c7;
+  --color-brand-dark: #38bdf8;
+  --color-accent-light: #0284c7;
+  --color-accent-dark: #38bdf8;
+  --color-scrollbar-track: #f1f5f9;
+  --color-scrollbar-thumb: #94a3b8;
+  --accent-color: var(--color-accent-light);
+
+  @media (prefers-color-scheme: dark) {
+    --accent-color: var(--color-accent-dark);
+    --color-scrollbar-track: #0f172a;
+    --color-scrollbar-thumb: #475569;
+  }
+
+  @supports (color: light-dark(white, black)) {
+    --accent-color: light-dark(var(--color-accent-light), var(--color-accent-dark));
+    --color-scrollbar-track: light-dark(#f1f5f9, #0f172a);
+    --color-scrollbar-thumb: light-dark(#94a3b8, #475569);
+  }
+
+  /* MANDATORY: Automatically adapt native UI to user system preferences */
+  color-scheme: light dark;
+  accent-color: var(--accent-color);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+  scroll-behavior: smooth;
+
+  &:has(> head > meta[name="color-scheme"][content="dark"]) {
+    color-scheme: dark;
+  }
+  &:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+  }
+}
+
+/* Legacy scrollbar fallback for older WebKit browsers */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar-thumb);
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-scrollbar-track);
+  }
+}
+
+/* 2. Typography & Text Wrapping (Modern Web Guidance: improve-text-layout-and-legibility) */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+p, blockquote, li, .pretty-text {
+  text-wrap: pretty;
+}
+
+/* 3. Scrollspy Navigation (Modern Web Guidance: scrollspy) */
+nav.scrollspy-nav {
+  scroll-target-group: auto;
+}
+
+nav.scrollspy-nav a:is(:target-current, .target-current) {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+  font-weight: 600;
+}
+
+/* 4. State-Aware Sticky Header (Modern Web Guidance: state-aware-sticky-headers) */
+.header-anchor-wrapper {
+  overflow-anchor: none;
+}
+
+.sticky-site-container {
+  position: sticky;
+  top: 0;
+  container-type: scroll-state;
+  container-name: site-header;
+  z-index: 40;
+}
+
+@container site-header scroll-state(stuck: top) {
+  .sticky-site-bar {
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.35);
+    backdrop-filter: blur(16px);
+  }
+}
+
+.sticky-site-container.is-stuck .sticky-site-bar {
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(16px);
+}
+
+/* 5. Deferred Off-Screen Content (Modern Web Guidance: defer-rendering-heavy-content) */
+.deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 650px;
+}
+
+/* 6. Post-Interaction Form Validation & Accessible Error Announcement
+   (Modern Web Guidance: validate-input-after-interaction, required-field-feedback, accessible-error-announcement) */
+.field-hint {
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+}
+
+.error-msg {
+  display: none;
+  color: #ef4444;
+  font-size: 0.8125rem;
+  margin-top: 0.375rem;
+  font-weight: 500;
+}
+
+input:user-invalid,
+textarea:user-invalid,
+select:user-invalid,
+input.user-invalid-fallback,
+textarea.user-invalid-fallback,
+select.user-invalid-fallback {
+  border-color: #ef4444 !important;
+  background-color: rgb(239 68 68 / 0.08);
+}
+
+input:user-invalid ~ .error-msg,
+textarea:user-invalid ~ .error-msg,
+select:user-invalid ~ .error-msg,
+input.user-invalid-fallback ~ .error-msg,
+textarea.user-invalid-fallback ~ .error-msg,
+select.user-invalid-fallback ~ .error-msg,
+input[aria-invalid="true"] ~ .error-msg,
+textarea[aria-invalid="true"] ~ .error-msg,
+select[aria-invalid="true"] ~ .error-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+input:required:user-valid,
+textarea:required:user-valid,
+select:required:user-valid,
+input.user-valid-fallback,
+textarea.user-valid-fallback,
+select.user-valid-fallback {
+  border-color: #10b981 !important;
+}
+
+/* 7. Modal Dialog Light-Dismiss & Backdrop (Modern Web Guidance: light-dismiss-a-dialog) */
+dialog::backdrop {
+  background-color: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+pre, code {
+  color-scheme: dark;
+  accent-color: var(--accent-color);
+}

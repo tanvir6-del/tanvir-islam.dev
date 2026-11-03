@@ -4,9 +4,9 @@ Modern, responsive, high-performance portfolio web application for **Tanvir-ul I
 
 ## Key Features
 
-1. **Hero & Visual Assets (`public/assets/profile-headshot.jpg`)**
-   - Displays the executive headshot (`public/assets/profile-headshot.jpg`) with `fetchpriority="high"`, squircle/circular frame toggle, and subtle ring glow.
-   - **Interactive Photo Manager (`<dialog closedby="any">`)**: Click **Add / Remove Photos** in the Hero section or header to upload new photos from your device, add photos by URL, switch the active headshot, or remove photos at any time.
+1. **Hero & Static Visual Asset (`public/assets/profile-headshot.jpg`)**
+   - Displays the portrait (`public/assets/profile-headshot.jpg`) with `fetchpriority="high"`, squircle border, and subtle ring glow.
+   - Managed strictly as a static resource in the codebase (`public/assets/profile-headshot.jpg`).
 2. **Core Competencies & Interactive Skills Matrix**
    - Filterable and searchable matrix covering:
      - **Agentic & AI Testing** (`Playwright`, `@playwright/mcp`, self-healing DOM recovery, GitHub Copilot & Claude workflows)

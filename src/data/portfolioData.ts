@@ -1,12 +1,3 @@
-export interface PhotoItem {
-  id: string;
-  title: string;
-  location: string;
-  url: string;
-  isDefault?: boolean;
-  caption: string;
-}
-
 export interface CompetencyCategory {
   id: string;
   category: string;
@@ -61,6 +52,7 @@ export const PROFILE_DATA = {
   github: 'https://github.com/tanvirislam06',
   linkedin: 'https://www.linkedin.com/in/tislamsdet/',
   resumeUrl: '/assets/Tanvir_Ul_Islam_Resume.html',
+  headshotUrl: '/assets/profile-headshot.jpg',
   metrics: [
     { value: '15+', label: 'Years in Enterprise QE & FinTech' },
     { value: '10+', label: 'Engineering Squads Standardized' },
@@ -68,17 +60,6 @@ export const PROFILE_DATA = {
     { value: '99.98%', label: 'Production Release Reliability' },
   ],
 };
-
-export const INITIAL_PHOTOS: PhotoItem[] = [
-  {
-    id: 'charlotte-executive-suit',
-    title: 'Executive Headshot in Suit (Charlotte)',
-    location: 'Charlotte, NC',
-    url: '/assets/profile-headshot.jpg',
-    isDefault: true,
-    caption: 'Recent executive portrait in tailored navy suit — Charlotte, NC',
-  },
-];
 
 export const COMPETENCY_CATEGORIES: CompetencyCategory[] = [
   {

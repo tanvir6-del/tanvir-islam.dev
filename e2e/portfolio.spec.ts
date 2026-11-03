@@ -26,25 +26,14 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
     expect(errors).toEqual([]);
   });
 
-  test('hides Photo Manager from public visitors and unlocks only in Owner Mode (?owner=tanvir-owner)', async ({ page }) => {
+  test('serves profile headshot strictly as a static resource with no UI photo upload/removal controls', async ({ page }) => {
     await page.goto('/');
+    const headshot = page.getByTestId('hero-headshot-img');
+    await expect(headshot).toBeVisible();
+    await expect(headshot).toHaveAttribute('src', '/assets/profile-headshot.jpg');
     await expect(page.getByTestId('hero-manage-photos-btn')).toHaveCount(0);
-
-    await page.goto('/?owner=tanvir-owner');
-    await page.getByTestId('hero-manage-photos-btn').click();
-    const dialog = page.getByTestId('photo-manager-dialog');
-    await expect(dialog).toBeVisible();
-
-    // Add a photo via URL
-    await page.getByLabel('Photo Title / Label').fill('Castle McCulloch Formal Suit Portrait');
-    await page.getByTestId('new-photo-url-input').fill('/assets/profile-headshot.jpg');
-    await page.getByTestId('add-photo-url-btn').click();
-
-    await expect(dialog).toContainText('Castle McCulloch Formal Suit Portrait');
-
-    // Close dialog
-    await page.getByTestId('close-photo-manager-btn').click();
-    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId('open-photo-manager-header')).toHaveCount(0);
+    await expect(page.getByTestId('photo-manager-dialog')).toHaveCount(0);
   });
 
   test('validates Contact Form and submits inquiry cleanly', async ({ page }) => {

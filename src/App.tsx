@@ -39,34 +39,12 @@ import {
   EDUCATION_CREDENTIALS,
   EXPERIENCE_TIMELINE,
   FEATURED_PROJECTS,
-  INITIAL_PHOTOS,
-  PhotoItem,
   PROFILE_DATA,
 } from './data/portfolioData';
 
 type ThemeMode = 'dark' | 'light';
-type AvatarShape = 'squircle' | 'circle';
-
-const PHOTO_STORAGE_KEY = 'tanvir_portfolio_photos_v1';
-const ACTIVE_PHOTO_STORAGE_KEY = 'tanvir_portfolio_active_photo_v1';
-const AVATAR_SHAPE_STORAGE_KEY = 'tanvir_portfolio_avatar_shape_v1';
-const OWNER_MODE_STORAGE_KEY = 'tanvir_portfolio_owner_unlocked_v1';
 
 export function App() {
-  // Owner-only mode: hidden from all public visitors unless unlocked by Tanvir
-  const [isOwnerMode, setIsOwnerMode] = useState<boolean>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const expectedKey = import.meta.env.VITE_OWNER_KEY || 'tanvir-owner';
-      if (params.get('owner') === expectedKey) {
-        sessionStorage.setItem(OWNER_MODE_STORAGE_KEY, 'true');
-        return true;
-      }
-      return sessionStorage.getItem(OWNER_MODE_STORAGE_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
   // Theme state (Dark mode by default per requirements, synced with <meta name="color-scheme">)
   const [theme, setTheme] = useState<ThemeMode>(() => {
     try {
@@ -80,45 +58,6 @@ export function App() {
 
   // Mobile navigation drawer state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Photo Library & Active Headshot state (allows adding and removing photos at any time)
-  const [photos, setPhotos] = useState<PhotoItem[]>(() => {
-    try {
-      const raw = localStorage.getItem(PHOTO_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {
-      // ignore
-    }
-    return INITIAL_PHOTOS;
-  });
-
-  const [activePhotoId, setActivePhotoId] = useState<string>(() => {
-    try {
-      return localStorage.getItem(ACTIVE_PHOTO_STORAGE_KEY) || INITIAL_PHOTOS[0].id;
-    } catch {
-      return INITIAL_PHOTOS[0].id;
-    }
-  });
-
-  const [avatarShape, setAvatarShape] = useState<AvatarShape>(() => {
-    try {
-      const saved = localStorage.getItem(AVATAR_SHAPE_STORAGE_KEY);
-      if (saved === 'circle' || saved === 'squircle') return saved;
-    } catch {
-      // ignore
-    }
-    return 'squircle';
-  });
-
-  // New photo form inside Photo Manager dialog
-  const [newPhotoTitle, setNewPhotoTitle] = useState('');
-  const [newPhotoLocation, setNewPhotoLocation] = useState('Charlotte, NC');
-  const [newPhotoCaption, setNewPhotoCaption] = useState('');
-  const [newPhotoUrl, setNewPhotoUrl] = useState('');
-  const [photoUploadError, setPhotoUploadError] = useState('');
 
   // Skills filter & search state
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -146,8 +85,7 @@ export function App() {
   const [selectedMeetingDuration, setSelectedMeetingDuration] = useState<'15' | '30' | '45'>('30');
   const [bookingSlotConfirmed, setBookingSlotConfirmed] = useState<string | null>(null);
 
-  // Refs for native <dialog> modals and sticky header
-  const photoDialogRef = useRef<HTMLDialogElement | null>(null);
+  // Refs for native <dialog> modal and sticky header
   const calendarDialogRef = useRef<HTMLDialogElement | null>(null);
   const stickyContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -171,31 +109,6 @@ export function App() {
       // ignore
     }
   }, [theme]);
-
-  // Persist photo library changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(PHOTO_STORAGE_KEY, JSON.stringify(photos));
-    } catch {
-      // ignore quota errors
-    }
-  }, [photos]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(ACTIVE_PHOTO_STORAGE_KEY, activePhotoId);
-    } catch {
-      // ignore
-    }
-  }, [activePhotoId]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(AVATAR_SHAPE_STORAGE_KEY, avatarShape);
-    } catch {
-      // ignore
-    }
-  }, [avatarShape]);
 
   // Modern Web Guidance: Scrollspy IntersectionObserver fallback + aria-current sync
   // and Sticky Header .is-stuck fallback
@@ -221,12 +134,10 @@ export function App() {
 
   // Modern Web Guidance: Dialog light-dismiss fallback for browsers without native `closedBy`
   useEffect(() => {
-    const dialogs = [photoDialogRef.current, calendarDialogRef.current].filter(
-      Boolean
-    ) as HTMLDialogElement[];
+    const dialog = calendarDialogRef.current;
+    if (!dialog) return;
 
     const handleDialogClick = (event: MouseEvent) => {
-      const dialog = event.currentTarget as HTMLDialogElement;
       if (event.target !== dialog) return;
       const rect = dialog.getBoundingClientRect();
       const isDialogContent =
@@ -240,32 +151,13 @@ export function App() {
     };
 
     if (typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
-      dialogs.forEach((d) => d.addEventListener('click', handleDialogClick));
-      return () => dialogs.forEach((d) => d.removeEventListener('click', handleDialogClick));
+      dialog.addEventListener('click', handleDialogClick);
+      return () => dialog.removeEventListener('click', handleDialogClick);
     }
   }, []);
 
-  const activePhoto = photos.find((p) => p.id === activePhotoId) || photos[0] || INITIAL_PHOTOS[0];
-
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
-
-  const openPhotoModal = () => {
-    setPhotoUploadError('');
-    if (photoDialogRef.current && typeof photoDialogRef.current.showModal === 'function') {
-      photoDialogRef.current.showModal();
-    } else if (photoDialogRef.current) {
-      photoDialogRef.current.setAttribute('open', 'true');
-    }
-  };
-
-  const closePhotoModal = () => {
-    if (photoDialogRef.current && typeof photoDialogRef.current.close === 'function') {
-      photoDialogRef.current.close();
-    } else if (photoDialogRef.current) {
-      photoDialogRef.current.removeAttribute('open');
-    }
   };
 
   const openCalendarModal = () => {
@@ -283,73 +175,6 @@ export function App() {
     } else if (calendarDialogRef.current) {
       calendarDialogRef.current.removeAttribute('open');
     }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setPhotoUploadError('Please select a valid image file (JPG, PNG, WebP, AVIF).');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        const id = `custom-photo-${Date.now()}`;
-        const title = newPhotoTitle.trim() || file.name.replace(/\.[^.]+$/, '');
-        const newEntry: PhotoItem = {
-          id,
-          title,
-          location: newPhotoLocation.trim() || 'Charlotte, NC',
-          url: reader.result,
-          caption: newPhotoCaption.trim() || `${title} (${newPhotoLocation.trim() || 'Charlotte, NC'})`,
-        };
-        setPhotos((prev) => [newEntry, ...prev]);
-        setActivePhotoId(id);
-        setNewPhotoTitle('');
-        setNewPhotoCaption('');
-        setPhotoUploadError('');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleAddPhotoByUrl = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPhotoUrl.trim()) {
-      setPhotoUploadError('Please enter an image URL or upload a file from your device.');
-      return;
-    }
-    const id = `url-photo-${Date.now()}`;
-    const title = newPhotoTitle.trim() || 'Professional Headshot Portrait';
-    const newEntry: PhotoItem = {
-      id,
-      title,
-      location: newPhotoLocation.trim() || 'Charlotte, NC',
-      url: newPhotoUrl.trim(),
-      caption: newPhotoCaption.trim() || `${title} — ${newPhotoLocation.trim() || 'Charlotte, NC'}`,
-    };
-    setPhotos((prev) => [newEntry, ...prev]);
-    setActivePhotoId(id);
-    setNewPhotoUrl('');
-    setNewPhotoTitle('');
-    setNewPhotoCaption('');
-    setPhotoUploadError('');
-  };
-
-  const handleRemovePhoto = (id: string) => {
-    setPhotos((prev) => {
-      const filtered = prev.filter((item) => item.id !== id);
-      if (activePhotoId === id && filtered.length > 0) {
-        setActivePhotoId(filtered[0].id);
-      }
-      return filtered;
-    });
-  };
-
-  const handleResetPhotos = () => {
-    setPhotos(INITIAL_PHOTOS);
-    setActivePhotoId(INITIAL_PHOTOS[0].id);
   };
 
   // Filtered Competencies
@@ -526,19 +351,6 @@ export function App() {
 
             {/* Header Utility Actions */}
             <div className="flex items-center gap-2">
-              {isOwnerMode && (
-                <button
-                  type="button"
-                  onClick={openPhotoModal}
-                  data-testid="open-photo-manager-header"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-sky-500/60 hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
-                  title="Add, switch, or remove profile photos (Owner Mode)"
-                >
-                  <ImagePlus className="w-3.5 h-3.5 text-sky-500" />
-                  <span>Photos ({photos.length})</span>
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={toggleTheme}
@@ -596,19 +408,6 @@ export function App() {
                 </a>
               ))}
               <div className="pt-2 flex items-center gap-2 border-t border-slate-200 dark:border-slate-800">
-                {isOwnerMode && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      openPhotoModal();
-                    }}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700"
-                  >
-                    <ImagePlus className="w-3.5 h-3.5 text-sky-500" />
-                    <span>Manage Photos ({photos.length})</span>
-                  </button>
-                )}
                 <a
                   href="#contact"
                   onClick={() => setMobileMenuOpen(false)}
@@ -740,102 +539,43 @@ export function App() {
                 </div>
               </div>
 
-              {/* Right Column: Executive Portrait with Squircle/Circle Ring Glow & Photo Manager Trigger */}
+              {/* Right Column: Executive Portrait (Static Codebase Asset) */}
               <div className="lg:col-span-5 flex flex-col items-center lg:items-end">
                 <div className="relative group">
                   {/* Subtle animated ring glow */}
                   <div
                     aria-hidden="true"
-                    className={` -inset-2 bg-gradient-to-tr from-sky-500 via-cyan-400 to-indigo-600 opacity-35 dark:opacity-45 blur-xl group-hover:opacity-65 transition-opacity duration-500 absolute ${
-                      avatarShape === 'circle' ? 'rounded-full' : 'rounded-[2.25rem]'
-                    }`}
+                    className="-inset-2 bg-gradient-to-tr from-sky-500 via-cyan-400 to-indigo-600 opacity-35 dark:opacity-45 blur-xl group-hover:opacity-65 transition-opacity duration-500 absolute rounded-[2.25rem]"
                   />
 
                   {/* Portrait Container */}
-                  <div
-                    className={`relative w-72 h-72 sm:w-80 sm:h-80 lg:w-[340px] lg:h-[340px] overflow-hidden border-2 border-sky-400/50 dark:border-sky-400/40 bg-slate-900 shadow-2xl shadow-sky-950/50 ring-4 ring-sky-500/15 transition-all duration-300 ${
-                      avatarShape === 'circle' ? 'rounded-full' : 'rounded-[2rem]'
-                    }`}
-                  >
-                    {activePhoto ? (
-                      <img
-                        src={activePhoto.url}
-                        alt={`${PROFILE_DATA.name} — ${activePhoto.title}`}
-                        fetchpriority="high"
-                        decoding="async"
-                        width={440}
-                        height={440}
-                        data-testid="hero-headshot-img"
-                        className="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-500"
-                      />
-                    ) : (
-                      <div
-                        data-testid="hero-headshot-placeholder"
-                        className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-slate-300 p-6 text-center"
-                      >
-                        <span className="text-5xl font-bold font-mono text-sky-400 mb-2">TI</span>
-                        <span className="text-xs font-mono text-slate-400">
-                          No photo selected. Click &ldquo;Manage Photos&rdquo; below to add a portrait.
-                        </span>
-                      </div>
-                    )}
+                  <div className="relative w-72 h-72 sm:w-80 sm:h-80 lg:w-[340px] lg:h-[340px] overflow-hidden border-2 border-sky-400/50 dark:border-sky-400/40 bg-slate-950 shadow-2xl shadow-sky-950/50 ring-4 ring-sky-500/15 transition-all duration-300 rounded-[2rem]">
+                    <img
+                      src={PROFILE_DATA.headshotUrl}
+                      alt={`${PROFILE_DATA.name} — ${PROFILE_DATA.title}`}
+                      fetchpriority="high"
+                      decoding="async"
+                      width={440}
+                      height={440}
+                      data-testid="hero-headshot-img"
+                      className="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-500"
+                    />
 
-                    {/* Floating Telemetry Overlay Badge */}
+                    {/* Floating Identity Badge */}
                     <div className="absolute bottom-3 inset-x-3 px-3.5 py-2 rounded-xl bg-slate-950/85 backdrop-blur-md border border-slate-700/80 flex items-center justify-between text-xs text-slate-200">
                       <div className="truncate pr-2">
-                        <p className="font-semibold text-white truncate">
-                          {activePhoto ? activePhoto.title : 'Add Executive Portrait'}
-                        </p>
+                        <p className="font-semibold text-white truncate">{PROFILE_DATA.name}</p>
                         <p className="font-mono text-[11px] text-sky-400 truncate">
-                          {activePhoto ? activePhoto.location : PROFILE_DATA.location}
+                          {PROFILE_DATA.location}
                         </p>
                       </div>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-mono text-[10px] shrink-0">
                         <ShieldCheck className="w-3 h-3" />
-                        Verified
+                        Principal SDET
                       </span>
                     </div>
                   </div>
                 </div>
-
-                {/* Owner-Only Controls under Headshot (Hidden from all public visitors) */}
-                {isOwnerMode && (
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setAvatarShape((prev) => (prev === 'squircle' ? 'circle' : 'squircle'))
-                      }
-                      data-testid="toggle-avatar-shape"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 hover:border-sky-500/50 transition-colors"
-                    >
-                      <span>Frame: {avatarShape === 'squircle' ? 'Squircle' : 'Circular'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={openPhotoModal}
-                      data-testid="hero-manage-photos-btn"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium border border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20 transition-colors"
-                    >
-                      <ImagePlus className="w-3.5 h-3.5" />
-                      <span>Add / Remove Photos</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sessionStorage.removeItem(OWNER_MODE_STORAGE_KEY);
-                        setIsOwnerMode(false);
-                      }}
-                      data-testid="lock-owner-mode-btn"
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      title="Hide owner photo controls"
-                    >
-                      <span>Lock</span>
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -1730,203 +1470,7 @@ export function App() {
       </footer>
 
       {/* ===================================================================
-          MODAL 1: PHOTO MANAGER (<dialog closedby="any"> per Modern Web Guidance)
-          Allows Tanvir to add, switch, and remove headshots & gallery photos
-         =================================================================== */}
-      <dialog
-        ref={photoDialogRef}
-        id="photo-manager-dialog"
-        closedby="any"
-        aria-labelledby="photo-dialog-title"
-        data-testid="photo-manager-dialog"
-        className="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 p-0 shadow-2xl"
-      >
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div>
-            <span className="text-xs font-mono uppercase tracking-wider text-sky-500">
-              Visual Assets &amp; Google Photos Library Manager
-            </span>
-            <h2 id="photo-dialog-title" className="text-xl font-bold mt-0.5">
-              Manage Profile Headshots &amp; Photos
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={closePhotoModal}
-            data-testid="close-photo-manager-btn"
-            aria-label="Close photo manager"
-            className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-          {/* Current Photo Gallery List */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Available Photos ({photos.length})
-              </h3>
-              <button
-                type="button"
-                onClick={handleResetPhotos}
-                data-testid="reset-photos-btn"
-                className="text-xs font-mono text-sky-500 hover:underline"
-              >
-                Reset to Default Portrait
-              </button>
-            </div>
-
-            {photos.length === 0 ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400 p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center">
-                All photos removed. Upload a photo from your device or paste a URL below, or click &ldquo;Reset to Default Portrait&rdquo;.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {photos.map((photo) => {
-                  const isSelected = activePhoto?.id === photo.id;
-                  return (
-                    <div
-                      key={photo.id}
-                      data-testid={`photo-item-${photo.id}`}
-                      className={`p-3 rounded-xl border flex items-center gap-3 ${
-                        isSelected
-                          ? 'border-sky-500 bg-sky-500/10'
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60'
-                      }`}
-                    >
-                      <img
-                        src={photo.url}
-                        alt={photo.title}
-                        loading="lazy"
-                        width={56}
-                        height={56}
-                        className="w-14 h-14 rounded-xl object-cover object-top shrink-0 border border-slate-700"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold truncate">{photo.title}</p>
-                        <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
-                          {photo.location}
-                        </p>
-                        <div className="mt-2 flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setActivePhotoId(photo.id)}
-                            data-testid={`select-photo-${photo.id}`}
-                            className={`px-2 py-0.5 rounded text-[11px] font-mono ${
-                              isSelected
-                                ? 'bg-sky-500 text-slate-950 font-semibold'
-                                : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                            }`}
-                          >
-                            {isSelected ? 'Active' : 'Use Photo'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePhoto(photo.id)}
-                            data-testid={`remove-photo-${photo.id}`}
-                            aria-label={`Remove ${photo.title}`}
-                            className="p-1 rounded text-rose-500 hover:bg-rose-500/10"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Add Photo via Local File Upload or URL */}
-          <form onSubmit={handleAddPhotoByUrl} className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              Add a New Headshot (Upload File or Paste Image URL)
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="new-photo-title" className="block text-xs font-medium mb-1">
-                  Photo Title / Label
-                </label>
-                <input
-                  id="new-photo-title"
-                  type="text"
-                  value={newPhotoTitle}
-                  onChange={(e) => setNewPhotoTitle(e.target.value)}
-                  placeholder="e.g. Castle McCulloch Suit Portrait"
-                  className="w-full px-3 py-2 rounded-lg text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700"
-                />
-              </div>
-              <div>
-                <label htmlFor="new-photo-location" className="block text-xs font-medium mb-1">
-                  Location
-                </label>
-                <input
-                  id="new-photo-location"
-                  type="text"
-                  value={newPhotoLocation}
-                  onChange={(e) => setNewPhotoLocation(e.target.value)}
-                  placeholder="e.g. Charlotte, NC"
-                  className="w-full px-3 py-2 rounded-lg text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-              <div>
-                <label htmlFor="new-photo-file" className="block text-xs font-medium mb-1">
-                  Option A: Upload from Device / Google Photos Export
-                </label>
-                <input
-                  id="new-photo-file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  data-testid="upload-photo-file-input"
-                  className="w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-500/20 file:text-sky-400 hover:file:bg-sky-500/30"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="new-photo-url" className="block text-xs font-medium mb-1">
-                  Option B: Image URL / Path
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    id="new-photo-url"
-                    type="text"
-                    value={newPhotoUrl}
-                    onChange={(e) => setNewPhotoUrl(e.target.value)}
-                    placeholder="/assets/profile-headshot.jpg or https://..."
-                    data-testid="new-photo-url-input"
-                    className="flex-1 px-3 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700"
-                  />
-                  <button
-                    type="submit"
-                    data-testid="add-photo-url-btn"
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-sky-500 text-slate-950 text-xs font-semibold shrink-0"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {photoUploadError && (
-              <p role="alert" className="text-xs text-rose-500">
-                {photoUploadError}
-              </p>
-            )}
-          </form>
-        </div>
-      </dialog>
-
-      {/* ===================================================================
-          MODAL 2: CALENDAR BOOKING (<dialog closedby="any">)
+          MODAL: CALENDAR BOOKING (<dialog closedby="any">)
          =================================================================== */}
       <dialog
         ref={calendarDialogRef}

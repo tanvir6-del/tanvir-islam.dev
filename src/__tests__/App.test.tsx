@@ -83,27 +83,16 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
     expect(screen.getByTestId('credential-rst-bach-bolton')).toBeInTheDocument();
   });
 
-  it('allows adding and removing photos in the Photo Manager modal only when Owner Mode is unlocked', () => {
-    sessionStorage.setItem('tanvir_portfolio_owner_unlocked_v1', 'true');
+  it('renders static profile headshot without any UI for adding or removing photos', () => {
     render(<App />);
 
-    fireEvent.click(screen.getByTestId('hero-manage-photos-btn'));
+    const headshot = screen.getByTestId('hero-headshot-img') as HTMLImageElement;
+    expect(headshot).toBeInTheDocument();
+    expect(headshot.getAttribute('src')).toBe('/assets/profile-headshot.jpg');
 
-    // Add a new photo via URL
-    const titleInput = screen.getByLabelText(/Photo Title \/ Label/i);
-    const urlInput = screen.getByTestId('new-photo-url-input');
-    fireEvent.change(titleInput, { target: { value: 'Castle McCulloch Suit Portrait' } });
-    fireEvent.change(urlInput, { target: { value: '/assets/profile-headshot.jpg' } });
-    fireEvent.click(screen.getByTestId('add-photo-url-btn'));
-
-    expect(screen.getAllByText(/Castle McCulloch Suit Portrait/i).length).toBeGreaterThan(0);
-
-    // Remove the default photo
-    const removeDefaultBtn = screen.getByTestId('remove-photo-charlotte-executive-suit');
-    fireEvent.click(removeDefaultBtn);
-    expect(
-      screen.queryByTestId('photo-item-charlotte-executive-suit')
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hero-manage-photos-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('open-photo-manager-header')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('photo-manager-dialog')).not.toBeInTheDocument();
   });
 
   it('validates Contact Form required fields and submits valid inquiries', async () => {

@@ -5,9 +5,10 @@ import App from '../App';
 describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
-  it('renders Hero section with Tanvir-ul Islam branding, title, headshot, and primary CTAs', () => {
+  it('renders Hero section with Tanvir-ul Islam branding, title, headshot, and primary CTAs (and hides owner photo controls from public visitors)', () => {
     render(<App />);
 
     expect(
@@ -20,6 +21,10 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
     const headshot = screen.getByTestId('hero-headshot-img') as HTMLImageElement;
     expect(headshot).toBeInTheDocument();
     expect(headshot.getAttribute('src')).toBe('/assets/profile-headshot.jpg');
+
+    // Public visitors must NOT see owner photo management buttons
+    expect(screen.queryByTestId('hero-manage-photos-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('open-photo-manager-header')).not.toBeInTheDocument();
 
     expect(screen.getByTestId('cta-get-in-touch')).toHaveAttribute('href', '#contact');
     expect(screen.getByTestId('cta-view-projects')).toHaveAttribute('href', '#projects');
@@ -78,7 +83,8 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
     expect(screen.getByTestId('credential-rst-bach-bolton')).toBeInTheDocument();
   });
 
-  it('allows adding and removing photos in the Photo Manager modal', () => {
+  it('allows adding and removing photos in the Photo Manager modal only when Owner Mode is unlocked', () => {
+    sessionStorage.setItem('tanvir_portfolio_owner_unlocked_v1', 'true');
     render(<App />);
 
     fireEvent.click(screen.getByTestId('hero-manage-photos-btn'));

@@ -26,9 +26,11 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
     expect(errors).toEqual([]);
   });
 
-  test('supports adding and removing photos in the Photo Manager dialog', async ({ page }) => {
+  test('hides Photo Manager from public visitors and unlocks only in Owner Mode (?owner=tanvir-owner)', async ({ page }) => {
     await page.goto('/');
+    await expect(page.getByTestId('hero-manage-photos-btn')).toHaveCount(0);
 
+    await page.goto('/?owner=tanvir-owner');
     await page.getByTestId('hero-manage-photos-btn').click();
     const dialog = page.getByTestId('photo-manager-dialog');
     await expect(dialog).toBeVisible();

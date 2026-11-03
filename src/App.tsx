@@ -50,8 +50,23 @@ type AvatarShape = 'squircle' | 'circle';
 const PHOTO_STORAGE_KEY = 'tanvir_portfolio_photos_v1';
 const ACTIVE_PHOTO_STORAGE_KEY = 'tanvir_portfolio_active_photo_v1';
 const AVATAR_SHAPE_STORAGE_KEY = 'tanvir_portfolio_avatar_shape_v1';
+const OWNER_MODE_STORAGE_KEY = 'tanvir_portfolio_owner_unlocked_v1';
 
 export function App() {
+  // Owner-only mode: hidden from all public visitors unless unlocked by Tanvir
+  const [isOwnerMode, setIsOwnerMode] = useState<boolean>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const expectedKey = import.meta.env.VITE_OWNER_KEY || 'tanvir-owner';
+      if (params.get('owner') === expectedKey) {
+        sessionStorage.setItem(OWNER_MODE_STORAGE_KEY, 'true');
+        return true;
+      }
+      return sessionStorage.getItem(OWNER_MODE_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
   // Theme state (Dark mode by default per requirements, synced with <meta name="color-scheme">)
   const [theme, setTheme] = useState<ThemeMode>(() => {
     try {
@@ -511,16 +526,18 @@ export function App() {
 
             {/* Header Utility Actions */}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={openPhotoModal}
-                data-testid="open-photo-manager-header"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-sky-500/60 hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
-                title="Add, switch, or remove profile photos"
-              >
-                <ImagePlus className="w-3.5 h-3.5 text-sky-500" />
-                <span>Photos ({photos.length})</span>
-              </button>
+              {isOwnerMode && (
+                <button
+                  type="button"
+                  onClick={openPhotoModal}
+                  data-testid="open-photo-manager-header"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-sky-500/60 hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
+                  title="Add, switch, or remove profile photos (Owner Mode)"
+                >
+                  <ImagePlus className="w-3.5 h-3.5 text-sky-500" />
+                  <span>Photos ({photos.length})</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -579,17 +596,19 @@ export function App() {
                 </a>
               ))}
               <div className="pt-2 flex items-center gap-2 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    openPhotoModal();
-                  }}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700"
-                >
-                  <ImagePlus className="w-3.5 h-3.5 text-sky-500" />
-                  <span>Manage Photos ({photos.length})</span>
-                </button>
+                {isOwnerMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openPhotoModal();
+                    }}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700"
+                  >
+                    <ImagePlus className="w-3.5 h-3.5 text-sky-500" />
+                    <span>Manage Photos ({photos.length})</span>
+                  </button>
+                )}
                 <a
                   href="#contact"
                   onClick={() => setMobileMenuOpen(false)}
@@ -779,29 +798,44 @@ export function App() {
                   </div>
                 </div>
 
-                {/* Interactive Controls under Headshot: Shape Switcher + Add/Remove Photos */}
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setAvatarShape((prev) => (prev === 'squircle' ? 'circle' : 'squircle'))
-                    }
-                    data-testid="toggle-avatar-shape"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 hover:border-sky-500/50 transition-colors"
-                  >
-                    <span>Frame: {avatarShape === 'squircle' ? 'Squircle' : 'Circular'}</span>
-                  </button>
+                {/* Owner-Only Controls under Headshot (Hidden from all public visitors) */}
+                {isOwnerMode && (
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAvatarShape((prev) => (prev === 'squircle' ? 'circle' : 'squircle'))
+                      }
+                      data-testid="toggle-avatar-shape"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-slate-300 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 hover:border-sky-500/50 transition-colors"
+                    >
+                      <span>Frame: {avatarShape === 'squircle' ? 'Squircle' : 'Circular'}</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={openPhotoModal}
-                    data-testid="hero-manage-photos-btn"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium border border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20 transition-colors"
-                  >
-                    <ImagePlus className="w-3.5 h-3.5" />
-                    <span>Add / Remove Photos</span>
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={openPhotoModal}
+                      data-testid="hero-manage-photos-btn"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium border border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20 transition-colors"
+                    >
+                      <ImagePlus className="w-3.5 h-3.5" />
+                      <span>Add / Remove Photos</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sessionStorage.removeItem(OWNER_MODE_STORAGE_KEY);
+                        setIsOwnerMode(false);
+                      }}
+                      data-testid="lock-owner-mode-btn"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      title="Hide owner photo controls"
+                    >
+                      <span>Lock</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -48,7 +48,7 @@ export const PROFILE_DATA = {
     'Over 15 years architecting enterprise-grade test automation frameworks, resilient cloud-native microservices testing, and next-generation agentic AI test workflows across banking and fintech leaders.',
   location: 'Charlotte / Huntersville, NC',
   phone: '917-639-7964',
-  email: 'tanvir6@gmail.com',
+  email: 'contact@tanvir-islam.dev',
   github: 'https://github.com/tanvirislam06',
   linkedin: 'https://www.linkedin.com/in/tislamsdet/',
   resumeUrl: '/assets/Tanvir_Ul_Islam_Resume.html',

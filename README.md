@@ -23,7 +23,7 @@ Modern, responsive, high-performance portfolio web application for **Tanvir-ul I
    - Full timeline across **Bank of America**, **Stash**, **Global Edit / Industrial Color**, and earlier SaaS engineering roles.
    - Highlights **James Bach / Michael Bolton Rapid Software Testing**, **Stanford HCI**, **Lean Product Management**, and **Test Automation Guild (Founding Member)**.
 5. **Inbound Contact & Conversion Hub**
-   - Accessible WCAG AA compliant contact form with post-interaction validation (`:user-invalid`, `aria-invalid`, `aria-errormessage`), spam honeypot protection, and Web3Forms / direct email routing to `tanvir6@gmail.com`.
+   - Accessible WCAG AA compliant contact form with post-interaction validation (`:user-invalid`, `aria-invalid`, `aria-errormessage`), spam honeypot protection, and FormSubmit / Web3Forms / direct email routing to `contact@tanvir-islam.dev`.
    - Interactive **Cal.com / Calendly Consultation Scheduler** modal (`15 min`, `30 min`, `45 min` slots).
 
 ## Getting Started

@@ -80,6 +80,7 @@ export function App() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [formFeedback, setFormFeedback] = useState('');
+  const [directMailtoUrl, setDirectMailtoUrl] = useState<string | null>(null);
 
   // Calendar Booking Dialog state
   const [selectedMeetingDuration, setSelectedMeetingDuration] = useState<'15' | '30' | '45'>('30');
@@ -227,33 +228,51 @@ export function App() {
     setFormStatus('submitting');
     setFormFeedback('');
 
-    const payload = {
-      access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || 'tanvir-portfolio-web3forms-key',
-      subject: `[Portfolio Inquiry - ${engagementType}] from ${fullName.trim()} (${company.trim()})`,
-      from_name: fullName.trim(),
-      company: company.trim(),
-      email: workEmail.trim(),
-      recipient: PROFILE_DATA.email,
-      engagement_type: engagementType,
-      message: message.trim(),
-    };
+    const subjectLine = `[Portfolio Inquiry - ${engagementType}] from ${fullName.trim()} (${company.trim()})`;
+    const mailtoBody = `Name: ${fullName.trim()}\nCompany: ${company.trim()}\nWork Email: ${workEmail.trim()}\nEngagement Type: ${engagementType}\n\nMessage:\n${message.trim()}`;
+    const mailtoLink = `mailto:${PROFILE_DATA.email}?subject=${encodeURIComponent(subjectLine)}&body=${encodeURIComponent(mailtoBody)}`;
+    setDirectMailtoUrl(mailtoLink);
 
     try {
       if (import.meta.env.VITE_WEB3FORMS_ACCESS_KEY) {
         const response = await fetch('https://api.web3forms.com/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
+            subject: subjectLine,
+            from_name: fullName.trim(),
+            company: company.trim(),
+            email: workEmail.trim(),
+            recipient: PROFILE_DATA.email,
+            engagement_type: engagementType,
+            message: message.trim(),
+          }),
         });
         if (!response.ok) throw new Error('Submission endpoint returned non-200');
+      } else if (import.meta.env.MODE !== 'test') {
+        const response = await fetch(`https://formsubmit.co/ajax/${PROFILE_DATA.email}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            _subject: subjectLine,
+            name: fullName.trim(),
+            company: company.trim(),
+            email: workEmail.trim(),
+            _replyto: workEmail.trim(),
+            engagement_type: engagementType,
+            message: message.trim(),
+            _template: 'table',
+          }),
+        });
+        if (!response.ok) throw new Error('FormSubmit endpoint returned non-200');
       } else {
-        // Simulated instant verification + pre-formatted routing to tanvir6@gmail.com
-        await new Promise((resolve) => setTimeout(resolve, 250));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       setFormStatus('success');
       setFormFeedback(
-        `Thank you, ${fullName.trim()}! Your ${engagementType} inquiry for ${company.trim()} has been queued for ${PROFILE_DATA.email}.`
+        `Thank you, ${fullName.trim()}! Your ${engagementType} inquiry for ${company.trim()} has been sent to ${PROFILE_DATA.email}.`
       );
       setFullName('');
       setCompany('');
@@ -265,8 +284,15 @@ export function App() {
     } catch {
       setFormStatus('success');
       setFormFeedback(
-        `Thank you, ${fullName.trim()}! Your message has been prepared for ${PROFILE_DATA.email}.`
+        `Thank you, ${fullName.trim()}! Your ${engagementType} inquiry for ${company.trim()} is ready for ${PROFILE_DATA.email}.`
       );
+      setFullName('');
+      setCompany('');
+      setWorkEmail('');
+      setEngagementType('Contract');
+      setMessage('');
+      setTouchedFields({});
+      setSubmitAttempted(false);
     }
   };
 
@@ -1391,18 +1417,30 @@ export function App() {
                     <div
                       role="status"
                       data-testid="contact-form-feedback"
-                      className={`p-4 rounded-xl text-sm font-medium flex items-start gap-2.5 ${
+                      className={`p-4 rounded-xl text-sm font-medium flex flex-wrap items-center justify-between gap-3 ${
                         formStatus === 'error'
                           ? 'bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-300'
                           : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
                       }`}
                     >
-                      {formStatus === 'error' ? (
-                        <X className="w-5 h-5 shrink-0 mt-0.5" />
-                      ) : (
-                        <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-2.5">
+                        {formStatus === 'error' ? (
+                          <X className="w-5 h-5 shrink-0 mt-0.5" />
+                        ) : (
+                          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                        )}
+                        <span>{formFeedback}</span>
+                      </div>
+                      {formStatus === 'success' && directMailtoUrl && (
+                        <a
+                          href={directMailtoUrl}
+                          data-testid="direct-mailto-fallback-link"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs shrink-0 transition-colors"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>Send via Mail App</span>
+                        </a>
                       )}
-                      <span>{formFeedback}</span>
                     </div>
                   )}
 

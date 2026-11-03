@@ -37,6 +37,11 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
       'href',
       'https://www.linkedin.com/in/tislamsdet/'
     );
+    expect(screen.getByTestId('badge-email')).toHaveAttribute(
+      'href',
+      'mailto:contact@tanvir-islam.dev'
+    );
+    expect(screen.getByTestId('badge-email')).toHaveTextContent('contact@tanvir-islam.dev');
   });
 
   it('filters Core Competencies & Skills Matrix by category and search query', () => {

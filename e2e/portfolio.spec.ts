@@ -36,8 +36,41 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
     await expect(page.getByTestId('photo-manager-dialog')).toHaveCount(0);
   });
 
-  test('validates Contact Form and submits inquiry cleanly', async ({ page }) => {
+  test('submits Contact Form via same-origin /api/contact with zero CORS errors and verifies Gmail + Mailto links', async ({
+    page,
+  }) => {
+    const failedRequests: string[] = [];
+    page.on('requestfailed', (req) => {
+      failedRequests.push(`${req.method()} ${req.url()} (${req.failure()?.errorText})`);
+    });
+
+    let capturedPayload: Record<string, unknown> | null = null;
+    await page.route('**/api/contact', async (route) => {
+      capturedPayload = route.request().postDataJSON();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ok: true,
+          delivered: true,
+          provider: 'cloudflare-email-routing',
+        }),
+      });
+    });
+
     await page.goto('/');
+
+    // Verify Hero email badge points to #contact and displays contact@tanvir-islam.dev
+    const heroEmailBadge = page.getByTestId('badge-email');
+    await expect(heroEmailBadge).toHaveText('contact@tanvir-islam.dev');
+    await expect(heroEmailBadge).toHaveAttribute('href', '#contact');
+
+    // Verify Direct Executive Contact card Gmail compose button
+    const gmailComposeBtn = page.getByTestId('gmail-compose-btn');
+    await expect(gmailComposeBtn).toHaveAttribute(
+      'href',
+      /https:\/\/mail\.google\.com\/mail\/\?view=cm&fs=1&to=contact%40tanvir-islam\.dev/
+    );
 
     const submitBtn = page.getByTestId('contact-submit-btn');
     await submitBtn.scrollIntoViewIfNeeded();
@@ -57,9 +90,38 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
 
     await submitBtn.click();
 
+    // Verify same-origin /api/contact payload
+    expect(capturedPayload).toMatchObject({
+      subject: '[Portfolio Inquiry - Contract] from Sarah Jenkins (Queen City Banking)',
+      name: 'Sarah Jenkins',
+      company: 'Queen City Banking',
+      email: 'sjenkins@queencitybank.com',
+      engagement_type: 'Contract',
+      message:
+        'Interested in bringing your Agentic Playwright architecture to our engineering org.',
+    });
+
+    // Verify confirmation feedback & pre-populated Gmail / Mail App links
     await expect(page.getByTestId('contact-form-feedback')).toContainText(
-      'Thank you, Sarah Jenkins!'
+      'Thank you, Sarah Jenkins! Your Contract inquiry for Queen City Banking has been sent to contact@tanvir-islam.dev.'
     );
+
+    const gmailFallbackLink = page.getByTestId('direct-gmail-fallback-link');
+    await expect(gmailFallbackLink).toBeVisible();
+    await expect(gmailFallbackLink).toHaveAttribute(
+      'href',
+      /https:\/\/mail\.google\.com\/mail\/\?view=cm&fs=1&to=contact%40tanvir-islam\.dev.*Sarah%20Jenkins/
+    );
+
+    const mailtoFallbackLink = page.getByTestId('direct-mailto-fallback-link');
+    await expect(mailtoFallbackLink).toBeVisible();
+    await expect(mailtoFallbackLink).toHaveAttribute(
+      'href',
+      /mailto:contact@tanvir-islam\.dev\?subject=.*Sarah%20Jenkins/
+    );
+
+    // Ensure zero failed / CORS-blocked requests occurred
+    expect(failedRequests).toEqual([]);
   });
 
   test('adapts responsively across mobile (375px), tablet (768px), and desktop (1280px) viewports', async ({

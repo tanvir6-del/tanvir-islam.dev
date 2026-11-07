@@ -255,7 +255,7 @@ export function App() {
           }),
         });
         if (!response.ok) throw new Error('Submission endpoint returned non-200');
-      } else if (import.meta.env.MODE !== 'test') {
+      } else {
         const response = await fetch('/api/contact', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -273,8 +273,6 @@ export function App() {
         if (data && data.delivered === false) {
           deliveredByEdge = false;
         }
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       setFormStatus('success');

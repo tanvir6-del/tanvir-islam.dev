@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import App from '../App';
 
 describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
@@ -100,7 +100,14 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
     expect(screen.queryByTestId('photo-manager-dialog')).not.toBeInTheDocument();
   });
 
-  it('validates Contact Form required fields and submits valid inquiries', async () => {
+  it('validates Contact Form required fields and submits valid inquiries via same-origin /api/contact', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ ok: true, delivered: true, provider: 'cloudflare-email-routing' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+
     render(<App />);
 
     const submitBtn = screen.getByTestId('contact-submit-btn');
@@ -134,9 +141,41 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('contact-form-feedback')).toHaveTextContent(
-        /Thank you, Alex Mercer!/i
+        /Thank you, Alex Mercer! Your Full-time Leadership inquiry for Charlotte FinTech Labs has been sent to contact@tanvir-islam\.dev\./i
       );
     });
+
+    // Assert same-origin /api/contact endpoint was called (never cross-origin formsubmit.co)
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/contact',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      })
+    );
+
+    // Verify both browser Gmail compose link and mailto fallback link are rendered with pre-filled parameters
+    const gmailLink = screen.getByTestId('direct-gmail-fallback-link');
+    expect(gmailLink).toHaveAttribute(
+      'href',
+      expect.stringContaining('https://mail.google.com/mail/?view=cm&fs=1&to=contact%40tanvir-islam.dev')
+    );
+    expect(gmailLink).toHaveAttribute('href', expect.stringContaining('Alex%20Mercer'));
+
+    const mailtoLink = screen.getByTestId('direct-mailto-fallback-link');
+    expect(mailtoLink).toHaveAttribute(
+      'href',
+      expect.stringContaining('mailto:contact@tanvir-islam.dev?subject=')
+    );
+
+    // Verify Direct Executive Contact card Gmail compose button
+    expect(screen.getByTestId('gmail-compose-btn')).toHaveAttribute(
+      'href',
+      expect.stringContaining('https://mail.google.com/mail/?view=cm&fs=1&to=contact%40tanvir-islam.dev')
+    );
+
+    fetchSpy.mockRestore();
   });
 
   it('toggles between dark mode (default) and light mode', () => {

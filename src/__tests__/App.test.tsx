@@ -170,6 +170,13 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
       expect.stringContaining('mailto:contact@tanvir-islam.dev?subject=')
     );
 
+    // Verify form fields are cleared and do NOT show post-submission validation errors
+    expect(screen.getByLabelText(/Full Name/i)).toHaveValue('');
+    expect(screen.getByLabelText(/Full Name/i)).not.toHaveAttribute('aria-invalid');
+    expect(screen.getByLabelText(/Company \/ Organization/i)).not.toHaveAttribute('aria-invalid');
+    expect(screen.getByLabelText(/Work Email/i)).not.toHaveAttribute('aria-invalid');
+    expect(screen.getByLabelText(/Message & Role/i)).not.toHaveAttribute('aria-invalid');
+
     // Verify Direct Executive Contact card Gmail compose button
     expect(screen.getByTestId('gmail-compose-btn')).toHaveAttribute(
       'href',

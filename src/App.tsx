@@ -78,6 +78,7 @@ export function App() {
   const [botcheck, setBotcheck] = useState('');
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [formFeedback, setFormFeedback] = useState('');
   const [directMailtoUrl, setDirectMailtoUrl] = useState<string | null>(null);
@@ -208,6 +209,7 @@ export function App() {
 
   const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formElement = e.currentTarget;
     setSubmitAttempted(true);
 
     // Spam honeypot check
@@ -288,6 +290,8 @@ export function App() {
       setMessage('');
       setTouchedFields({});
       setSubmitAttempted(false);
+      setFormResetKey((prev) => prev + 1);
+      formElement.reset();
     } catch {
       setFormStatus('success');
       setFormFeedback(
@@ -300,6 +304,8 @@ export function App() {
       setMessage('');
       setTouchedFields({});
       setSubmitAttempted(false);
+      setFormResetKey((prev) => prev + 1);
+      formElement.reset();
     }
   };
 
@@ -1223,6 +1229,7 @@ export function App() {
               {/* Right Column: Accessible Contact Form (Modern Web Guidance compliant) */}
               <div className="lg:col-span-7">
                 <form
+                  key={formResetKey}
                   onSubmit={handleContactSubmit}
                   noValidate
                   data-testid="contact-form"

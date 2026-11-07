@@ -124,19 +124,16 @@ nav.scrollspy-nav a:is(:target-current, .target-current) {
   font-weight: 500;
 }
 
-input:user-invalid,
-textarea:user-invalid,
-select:user-invalid,
 input.user-invalid-fallback,
 textarea.user-invalid-fallback,
-select.user-invalid-fallback {
+select.user-invalid-fallback,
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
   border-color: #ef4444 !important;
   background-color: rgb(239 68 68 / 0.08);
 }
 
-input:user-invalid ~ .error-msg,
-textarea:user-invalid ~ .error-msg,
-select:user-invalid ~ .error-msg,
 input.user-invalid-fallback ~ .error-msg,
 textarea.user-invalid-fallback ~ .error-msg,
 select.user-invalid-fallback ~ .error-msg,

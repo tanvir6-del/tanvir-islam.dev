@@ -120,6 +120,12 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
       /mailto:contact@tanvir-islam\.dev\?subject=.*Sarah%20Jenkins/
     );
 
+    // Ensure field error messages are hidden after successful form reset
+    await expect(page.locator('#name-error')).toBeHidden();
+    await expect(page.locator('#company-error')).toBeHidden();
+    await expect(page.locator('#email-error')).toBeHidden();
+    await expect(page.locator('#message-error')).toBeHidden();
+
     // Ensure zero failed / CORS-blocked requests occurred
     expect(failedRequests).toEqual([]);
   });

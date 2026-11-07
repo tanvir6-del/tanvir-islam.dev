@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import App from '../App';
+import worker from '../worker';
 
 describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
   beforeEach(() => {
@@ -176,6 +177,85 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
     );
 
     fetchSpy.mockRestore();
+  });
+
+  it('handles Send Message form fallback gracefully when edge email binding is inactive or offline', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ ok: true, delivered: false, reason: 'CONTACT_EMAIL binding not active' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText(/Full Name/i), {
+      target: { value: 'Jordan Taylor' },
+    });
+    fireEvent.change(screen.getByLabelText(/Company \/ Organization/i), {
+      target: { value: 'Apex Digital Banking' },
+    });
+    fireEvent.change(screen.getByLabelText(/Work Email/i), {
+      target: { value: 'jtaylor@apexbank.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/Engagement Type/i), {
+      target: { value: 'Consulting/Advisory' },
+    });
+    fireEvent.change(screen.getByLabelText(/Message & Role/i), {
+      target: {
+        value: 'Need advisory support for our Go microservices contract testing architecture.',
+      },
+    });
+
+    fireEvent.click(screen.getByTestId('contact-submit-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('contact-form-feedback')).toHaveTextContent(
+        /Thank you, Jordan Taylor! Your Consulting\/Advisory inquiry for Apex Digital Banking is ready for contact@tanvir-islam\.dev/i
+      );
+    });
+
+    expect(screen.getByTestId('direct-gmail-fallback-link')).toHaveAttribute(
+      'href',
+      expect.stringContaining('Jordan%20Taylor')
+    );
+
+    fetchSpy.mockRestore();
+  });
+
+  it('delivers email via Cloudflare Worker /api/contact handler using CONTACT_EMAIL binding', async () => {
+    const sendSpy = vi.fn().mockResolvedValue(undefined);
+    const req = new Request('https://tanvir-islam.dev/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject: '[Portfolio Inquiry - Contract] from Elena Vance (Vance FinTech)',
+        name: 'Elena Vance',
+        company: 'Vance FinTech',
+        email: 'elena@vancefintech.com',
+        engagement_type: 'Contract',
+        message: 'Looking for a Principal SDET to lead our Playwright MCP automation platform.',
+      }),
+    });
+
+    const res = await worker.fetch(req, {
+      CONTACT_EMAIL: { send: sendSpy },
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({
+      ok: true,
+      delivered: true,
+      provider: 'cloudflare-email-routing',
+    });
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    const sentMsg = sendSpy.mock.calls[0][0];
+    expect(sentMsg.from).toBe('contact@tanvir-islam.dev');
+    expect(sentMsg.to).toBe('tanvir6@gmail.com');
+    expect(sentMsg.raw).toContain('Reply-To: <elena@vancefintech.com>');
+    expect(sentMsg.raw).toContain('Elena Vance');
   });
 
   it('toggles between dark mode (default) and light mode', () => {

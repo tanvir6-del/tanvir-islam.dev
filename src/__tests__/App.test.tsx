@@ -39,7 +39,7 @@ describe('Tanvir-ul Islam Portfolio Website — Unit Tests', () => {
     );
     expect(screen.getByTestId('badge-email')).toHaveAttribute(
       'href',
-      'mailto:contact@tanvir-islam.dev'
+      '#contact'
     );
     expect(screen.getByTestId('badge-email')).toHaveTextContent('contact@tanvir-islam.dev');
   });

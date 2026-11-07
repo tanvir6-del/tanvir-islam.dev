@@ -2,6 +2,9 @@
   "name": "tanvir-islam-portfolio",
   "main": "./src/worker.ts",
   "compatibility_date": "2026-01-01",
+  "build": {
+    "command": "npm run build"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS"

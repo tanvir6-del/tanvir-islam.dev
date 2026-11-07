@@ -193,18 +193,22 @@ export function App() {
   });
 
   // Contact form validation helpers (Modern Web Guidance:accessible-error-announcement)
+  const isValidationActive = formStatus !== 'success' && formStatus !== 'submitting';
   const isNameInvalid =
-    (touchedFields.fullName || submitAttempted) && fullName.trim().length < 2;
+    isValidationActive && (touchedFields.fullName || submitAttempted) && fullName.trim().length < 2;
   const isCompanyInvalid =
-    (touchedFields.company || submitAttempted) && company.trim().length < 2;
+    isValidationActive && (touchedFields.company || submitAttempted) && company.trim().length < 2;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailInvalid =
-    (touchedFields.workEmail || submitAttempted) && !emailRegex.test(workEmail.trim());
+    isValidationActive && (touchedFields.workEmail || submitAttempted) && !emailRegex.test(workEmail.trim());
   const isMessageInvalid =
-    (touchedFields.message || submitAttempted) && message.trim().length < 10;
+    isValidationActive && (touchedFields.message || submitAttempted) && message.trim().length < 10;
 
-  const markTouched = (field: string) => {
-    setTouchedFields((prev) => ({ ...prev, [field]: true }));
+  const markTouched = (field: string, currentValue: string) => {
+    if (formStatus === 'success' || formStatus === 'submitting') return;
+    if (currentValue.trim().length > 0 || submitAttempted) {
+      setTouchedFields((prev) => ({ ...prev, [field]: true }));
+    }
   };
 
   const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1278,24 +1282,28 @@ export function App() {
                         id="contact-full-name"
                         name="fullName"
                         type="text"
-                        required
-                        minLength={2}
+                        aria-required="true"
                         autoComplete="name"
                         value={fullName}
-                        onBlur={() => markTouched('fullName')}
-                        onChange={(e) => setFullName(e.target.value)}
+                        onBlur={(e) => markTouched('fullName', e.target.value)}
+                        onChange={(e) => {
+                          if (formStatus === 'success') setFormStatus('idle');
+                          setFullName(e.target.value);
+                        }}
                         aria-describedby="name-hint"
-                        aria-errormessage="name-error"
+                        aria-errormessage={isNameInvalid ? 'name-error' : undefined}
                         aria-invalid={isNameInvalid ? 'true' : undefined}
                         className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                           isNameInvalid ? 'user-invalid-fallback' : ''
                         }`}
                         placeholder="Jane Doe"
                       />
-                      <div id="name-error" role="alert" className="error-msg">
-                        <span aria-hidden="true">❌</span>
-                        <span>Please enter your full name (minimum 2 characters).</span>
-                      </div>
+                      {isNameInvalid && (
+                        <div id="name-error" role="alert" className="error-msg">
+                          <span aria-hidden="true">❌</span>
+                          <span>Please enter your full name (minimum 2 characters).</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Company */}
@@ -1316,24 +1324,28 @@ export function App() {
                         id="contact-company"
                         name="company"
                         type="text"
-                        required
-                        minLength={2}
+                        aria-required="true"
                         autoComplete="organization"
                         value={company}
-                        onBlur={() => markTouched('company')}
-                        onChange={(e) => setCompany(e.target.value)}
+                        onBlur={(e) => markTouched('company', e.target.value)}
+                        onChange={(e) => {
+                          if (formStatus === 'success') setFormStatus('idle');
+                          setCompany(e.target.value);
+                        }}
                         aria-describedby="company-hint"
-                        aria-errormessage="company-error"
+                        aria-errormessage={isCompanyInvalid ? 'company-error' : undefined}
                         aria-invalid={isCompanyInvalid ? 'true' : undefined}
                         className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                           isCompanyInvalid ? 'user-invalid-fallback' : ''
                         }`}
                         placeholder="Enterprise FinTech Corp"
                       />
-                      <div id="company-error" role="alert" className="error-msg">
-                        <span aria-hidden="true">❌</span>
-                        <span>Please enter your company or organization name.</span>
-                      </div>
+                      {isCompanyInvalid && (
+                        <div id="company-error" role="alert" className="error-msg">
+                          <span aria-hidden="true">❌</span>
+                          <span>Please enter your company or organization name.</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1353,23 +1365,28 @@ export function App() {
                         id="contact-work-email"
                         name="workEmail"
                         type="email"
-                        required
+                        aria-required="true"
                         autoComplete="email"
                         value={workEmail}
-                        onBlur={() => markTouched('workEmail')}
-                        onChange={(e) => setWorkEmail(e.target.value)}
+                        onBlur={(e) => markTouched('workEmail', e.target.value)}
+                        onChange={(e) => {
+                          if (formStatus === 'success') setFormStatus('idle');
+                          setWorkEmail(e.target.value);
+                        }}
                         aria-describedby="email-hint"
-                        aria-errormessage="email-error"
+                        aria-errormessage={isEmailInvalid ? 'email-error' : undefined}
                         aria-invalid={isEmailInvalid ? 'true' : undefined}
                         className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                           isEmailInvalid ? 'user-invalid-fallback' : ''
                         }`}
                         placeholder="jane.doe@company.com"
                       />
-                      <div id="email-error" role="alert" className="error-msg">
-                        <span aria-hidden="true">❌</span>
-                        <span>Please enter a valid work email address.</span>
-                      </div>
+                      {isEmailInvalid && (
+                        <div id="email-error" role="alert" className="error-msg">
+                          <span aria-hidden="true">❌</span>
+                          <span>Please enter a valid work email address.</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Engagement Type */}
@@ -1389,7 +1406,7 @@ export function App() {
                       <select
                         id="contact-engagement-type"
                         name="engagementType"
-                        required
+                        aria-required="true"
                         value={engagementType}
                         onChange={(e) => setEngagementType(e.target.value)}
                         aria-describedby="engagement-hint"
@@ -1421,23 +1438,27 @@ export function App() {
                       id="contact-message"
                       name="message"
                       rows={4}
-                      required
-                      minLength={10}
+                      aria-required="true"
                       value={message}
-                      onBlur={() => markTouched('message')}
-                      onChange={(e) => setMessage(e.target.value)}
+                      onBlur={(e) => markTouched('message', e.target.value)}
+                      onChange={(e) => {
+                        if (formStatus === 'success') setFormStatus('idle');
+                        setMessage(e.target.value);
+                      }}
                       aria-describedby="message-hint"
-                      aria-errormessage="message-error"
+                      aria-errormessage={isMessageInvalid ? 'message-error' : undefined}
                       aria-invalid={isMessageInvalid ? 'true' : undefined}
                       className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                         isMessageInvalid ? 'user-invalid-fallback' : ''
                       }`}
                       placeholder="Hi Tanvir, we're scaling our agentic Playwright & Go microservices testing architecture and would love to discuss..."
                     />
-                    <div id="message-error" role="alert" className="error-msg">
-                      <span aria-hidden="true">❌</span>
-                      <span>Please enter a message of at least 10 characters.</span>
-                    </div>
+                    {isMessageInvalid && (
+                      <div id="message-error" role="alert" className="error-msg">
+                        <span aria-hidden="true">❌</span>
+                        <span>Please enter a message of at least 10 characters.</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Form Status Alert */}

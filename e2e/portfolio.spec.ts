@@ -47,6 +47,7 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
     let capturedPayload: Record<string, unknown> | null = null;
     await page.route('**/api/contact', async (route) => {
       capturedPayload = route.request().postDataJSON();
+      await new Promise((r) => setTimeout(r, 150));
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -79,16 +80,34 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
     await expect(page.getByTestId('contact-form-feedback')).toContainText(
       'Please complete all required fields'
     );
+    await expect(page.locator('#name-error')).toBeVisible();
+    await expect(page.locator('#company-error')).toBeVisible();
+    await expect(page.locator('#email-error')).toBeVisible();
+    await expect(page.locator('#message-error')).toBeVisible();
 
-    await page.getByLabel(/Full Name/i).fill('Sarah Jenkins');
-    await page.getByLabel(/Company \/ Organization/i).fill('Queen City Banking');
-    await page.getByLabel(/Work Email/i).fill('sjenkins@queencitybank.com');
+    const nameInput = page.getByLabel(/Full Name/i);
+    const companyInput = page.getByLabel(/Company \/ Organization/i);
+    const emailInput = page.getByLabel(/Work Email/i);
+    const messageInput = page.getByLabel(/Message & Role/i);
+
+    await nameInput.click();
+    await nameInput.fill('Sarah Jenkins');
+    await companyInput.click();
+    await companyInput.fill('Queen City Banking');
+    await emailInput.click();
+    await emailInput.fill('sjenkins@queencitybank.com');
     await page.getByLabel(/Engagement Type/i).selectOption('Contract');
-    await page
-      .getByLabel(/Message & Role/i)
-      .fill('Interested in bringing your Agentic Playwright architecture to our engineering org.');
+    await messageInput.click();
+    await messageInput.fill(
+      'Interested in bringing your Agentic Playwright architecture to our engineering org.'
+    );
 
     await submitBtn.click();
+
+    // Verify confirmation feedback & pre-populated Gmail / Mail App links
+    await expect(page.getByTestId('contact-form-feedback')).toContainText(
+      'Thank you, Sarah Jenkins! Your Contract inquiry for Queen City Banking has been sent to contact@tanvir-islam.dev.'
+    );
 
     // Verify same-origin /api/contact payload
     expect(capturedPayload).toMatchObject({
@@ -100,11 +119,6 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
       message:
         'Interested in bringing your Agentic Playwright architecture to our engineering org.',
     });
-
-    // Verify confirmation feedback & pre-populated Gmail / Mail App links
-    await expect(page.getByTestId('contact-form-feedback')).toContainText(
-      'Thank you, Sarah Jenkins! Your Contract inquiry for Queen City Banking has been sent to contact@tanvir-islam.dev.'
-    );
 
     const gmailFallbackLink = page.getByTestId('direct-gmail-fallback-link');
     await expect(gmailFallbackLink).toBeVisible();
@@ -120,11 +134,15 @@ test.describe('Tanvir-ul Islam Portfolio — Playwright E2E Smoke Suite', () => 
       /mailto:contact@tanvir-islam\.dev\?subject=.*Sarah%20Jenkins/
     );
 
-    // Ensure field error messages are hidden after successful form reset
-    await expect(page.locator('#name-error')).toBeHidden();
-    await expect(page.locator('#company-error')).toBeHidden();
-    await expect(page.locator('#email-error')).toBeHidden();
-    await expect(page.locator('#message-error')).toBeHidden();
+    // Ensure field error messages are completely removed from the DOM after successful form reset
+    await expect(page.locator('#name-error')).toHaveCount(0);
+    await expect(page.locator('#company-error')).toHaveCount(0);
+    await expect(page.locator('#email-error')).toHaveCount(0);
+    await expect(page.locator('#message-error')).toHaveCount(0);
+    await expect(page.getByText('Please enter your full name (minimum 2 characters).')).toHaveCount(0);
+    await expect(page.getByText('Please enter your company or organization name.')).toHaveCount(0);
+    await expect(page.getByText('Please enter a valid work email address.')).toHaveCount(0);
+    await expect(page.getByText('Please enter a message of at least 10 characters.')).toHaveCount(0);
 
     // Ensure zero failed / CORS-blocked requests occurred
     expect(failedRequests).toEqual([]);

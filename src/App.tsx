@@ -237,7 +237,7 @@ export function App() {
     setDirectGmailUrl(gmailLink);
 
     try {
-      let requiresActivation = false;
+      let deliveredByEdge = true;
 
       if (import.meta.env.VITE_WEB3FORMS_ACCESS_KEY) {
         const response = await fetch('https://api.web3forms.com/submit', {
@@ -256,24 +256,22 @@ export function App() {
         });
         if (!response.ok) throw new Error('Submission endpoint returned non-200');
       } else if (import.meta.env.MODE !== 'test') {
-        const response = await fetch(`https://formsubmit.co/ajax/${PROFILE_DATA.email}`, {
+        const response = await fetch('/api/contact', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({
-            _subject: subjectLine,
+            subject: subjectLine,
             name: fullName.trim(),
             company: company.trim(),
             email: workEmail.trim(),
-            _replyto: workEmail.trim(),
             engagement_type: engagementType,
             message: message.trim(),
-            _template: 'table',
           }),
         });
-        if (!response.ok) throw new Error('FormSubmit endpoint returned non-200');
+        if (!response.ok) throw new Error('Edge contact endpoint returned non-200');
         const data = await response.json().catch(() => null);
-        if (data && (data.success === 'false' || data.success === false)) {
-          requiresActivation = true;
+        if (data && data.delivered === false) {
+          deliveredByEdge = false;
         }
       } else {
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -281,9 +279,9 @@ export function App() {
 
       setFormStatus('success');
       setFormFeedback(
-        requiresActivation
-          ? `Thank you, ${fullName.trim()}! Check your inbox (${PROFILE_DATA.email}) for a one-time FormSubmit activation email, or click "Send in Gmail" below to send immediately in your browser.`
-          : `Thank you, ${fullName.trim()}! Your ${engagementType} inquiry for ${company.trim()} has been sent to ${PROFILE_DATA.email}.`
+        deliveredByEdge
+          ? `Thank you, ${fullName.trim()}! Your ${engagementType} inquiry for ${company.trim()} has been sent to ${PROFILE_DATA.email}.`
+          : `Thank you, ${fullName.trim()}! Your ${engagementType} inquiry for ${company.trim()} is ready for ${PROFILE_DATA.email} — click "Send in Gmail" below to send right from your browser.`
       );
       setFullName('');
       setCompany('');
